@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const BASE_URL = "http://10.0.2.2:8000/";
+// const BASE_URL = "http://192.168.100.9:8000/";
+// const BASE_URL = "https://a999-2001-ee0-4f01-2ec0-206e-70d2-cbc9-2008.ngrok-free.app/";
+const BASE_URL = "http://10.0.0.2:8000/";
 
 export const endpoints = {
     'categories': '/categories/',
@@ -15,7 +17,9 @@ export const endpoints = {
     'my-courses': '/users/my-courses/',
     'lesson-done': (lessonId) => `/lessons/${lessonId}/lesson-done/`,
     'apointment': '/apointment/',
-    'chat': (courseId) => `/courses/${courseId}/chats`
+    'chat': (courseId) => `/courses/${courseId}/chats`,
+    'user':(teacherId) => `/users/${teacherId}/`,
+    'myApoinment':(userId) => `/users/${userId}/my-appointment/`
 }
 
 export const authApis = (token) => {

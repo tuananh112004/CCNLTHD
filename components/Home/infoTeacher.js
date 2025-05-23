@@ -1,11 +1,9 @@
-
 import { useContext, useState } from "react";
 import { MyDispatchContext, MyUserContext } from "../../configs/Contexts";
 import { Text, View, StyleSheet, ScrollView, Image, TouchableOpacity } from "react-native";
 import MyStyles from "../../styles/MyStyles";
 import { useEffect } from "react";
 import Apis, { authApis, endpoints } from "../../configs/Apis";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { 
   Button, 
   Avatar, 
@@ -21,60 +19,35 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-const Profile = () => {
-    const user = useContext(MyUserContext);
+const Profile4 = ({route}) => {
     const dispatch = useContext(MyDispatchContext);
     const nav = useNavigation();
     const [menuVisible, setMenuVisible] = useState(false);
     const [infoExpanded, setInfoExpanded] = useState(false);
-    const [appointmentExpanded, setAppointmentExpanded] = useState(false);
-    const [apoinment, setApoinment] = useState([]);
-   
-    
-    const loadApoinment = async () => {
-        try {
-            const token = await AsyncStorage.getItem('token');
-        //   const res = await Apis.get(endpoints['myApoinment'](user.id));
-        const res = await authApis(token).get(endpoints['myApoinment'](user.id));
-            const formatted = res.data.map(item => ({
-                date: item.date,
-                teacherName: item.teacher.first_name,
-                time: item.time,
-                note: item.note
-            }));
-
-            console.log("formatted:", formatted);
-            setApoinment(formatted);
-          
-        } catch (err) {
-          console.error('Lỗi khi tải user:', err);
-          setError('Không thể tải user.');
-        }
-      }
-     useEffect(() => {
-        loadApoinment();
-      }, [user.id]);
-
-    
+    const [user, setUser] = useState(null);
+    console.log("user: ", user)
     const logout = () => {
         dispatch({
             "type": "logout"
         });
         nav.navigate('index');
     };
-
+    const teacherId = route.params?.teacherId;
+  const loadUser = async () => {
+    try {
+      const res = await Apis.get(endpoints['user'](teacherId));
+      setUser(res.data);
+    } catch (err) {
+      console.error('Lỗi khi tải user:', err);
+      setError('Không thể tải user.');
+    }
+  }
+ useEffect(() => {
+    loadUser();
+  }, [teacherId]);
     const handleEditProfile = () => {
         // Điều hướng đến trang chỉnh sửa hồ sơ
         nav.navigate('EditProfile');
-    };
-
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
     };
 
     return (
@@ -100,7 +73,7 @@ const Profile = () => {
                 <View style={styles.profileHeader}>
                     <View style={styles.coverImageContainer}>
                         <Image 
-                            source={{ uri: user.coverImage || 'https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8d2FsbCUyMGJhY2tncm91bmR8ZW58MHx8MHx8&w=1000&q=80' }} 
+                            source={{ uri: user?.coverImage || 'https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8d2FsbCUyMGJhY2tncm91bmR8ZW58MHx8MHx8&w=1000&q=80' }} 
                             style={styles.coverImage}
                         />
                     </View>
@@ -108,7 +81,7 @@ const Profile = () => {
                     <View style={styles.avatarContainer}>
                         <Avatar.Image 
                             size={100} 
-                            source={{ uri: user.avatar || 'https://i.pravatar.cc/300' }} 
+                            source={{ uri: user?.avatar || 'https://i.pravatar.cc/300' }} 
                             style={styles.avatar}
                         />
                         <TouchableOpacity style={styles.editAvatarButton} onPress={handleEditProfile}>
@@ -117,7 +90,7 @@ const Profile = () => {
                     </View>
                     
                     <View style={styles.profileInfo}>
-                        <Text style={[MyStyles.subject, styles.profileName]}>Chào {user.first_name +" "+ user.last_name}!</Text>
+                        <Text style={[MyStyles.subject, styles.profileName]}>Chào {user?.first_name +" "+ user?.last_name}!</Text>
                         
                     </View>
                 </View>
@@ -157,78 +130,22 @@ const Profile = () => {
 
                 <Divider />
 
-                {/* Phần hiển thị hoạt động gần đây */}
-                <View style={styles.section}>
-                    <Title style={styles.sectionTitle}>Hoạt động gần đây</Title>
-                    
-                    {user.activities && user.activities.length > 0 ? (
-                        user.activities.map((activity, index) => (
-                            <Card key={index} style={styles.card}>
-                                <Card.Content>
-                                    <Title>{activity.title || 'Hoạt động'}</Title>
-                                    <Paragraph>{activity.description || 'Không có mô tả'}</Paragraph>
-                                    <Text style={styles.timeText}>{activity.time || 'Không xác định'}</Text>
-                                </Card.Content>
-                                <Card.Actions>
-                                    <Button onPress={() => console.log('Xem chi tiết')}>Xem chi tiết</Button>
-                                </Card.Actions>
-                            </Card>
-                        ))
-                    ) : (
-                        <Card style={styles.card}>
-                            <Card.Content>
-                                <Paragraph>Chưa có hoạt động nào gần đây</Paragraph>
-                            </Card.Content>
-                        </Card>
-                    )}
-                </View>
-
                 <Divider />
 
-                {/* Phần hiển thị danh sách lịch hẹn */}
+                {/* Phần hiển thị các kết nối
                 <List.Section>
+                    <List.Subheader>Kết nối của bạn</List.Subheader>
+                   
                     <List.Item
-                        title="Danh sách lịch hẹn"
-                        description={`${apoinment.length} lịch hẹn`}
-                        left={props => <List.Icon {...props} icon="calendar-clock" />}
-                        right={props => <List.Icon {...props} icon={appointmentExpanded ? "chevron-up" : "chevron-down"} />}
-                        onPress={() => setAppointmentExpanded(!appointmentExpanded)}
+                        title="Sự kiện"
+                        description={`${user.events || 0} sự kiện`}
+                        left={props => <List.Icon {...props} icon="calendar" />}
+                        right={props => <List.Icon {...props} icon="chevron-right" />}
+                        onPress={() => nav.navigate('Events')}
                     />
-                    
-                    {/* Hiển thị danh sách lịch hẹn */}
-                    {appointmentExpanded && apoinment.length > 0 && (
-                        <Card style={styles.appointmentCard}>
-                            <Card.Content>
-                                {apoinment.map((appointment, index) => (
-                                    <View key={index} style={styles.appointmentItem}>
-                                        <View style={styles.appointmentContent}>
-                                            <Text style={styles.appointmentDate}>
-                                                {formatDate(appointment.date)}
-                                            </Text>
-                                            <Text style={styles.appointmentTime}>
-                                                Thời gian: {appointment.time || 'Chưa xác định'}
-                                            </Text>
-                                            <Text style={styles.appointmentUser}>
-                                                Học viên: {user.first_name} {user.last_name}
-                                            </Text>
-                                            <Text style={styles.appointmentTeacher}>
-                                                Giáo viên: {appointment.teacherName}
-                                            </Text>
-                                            {appointment.note && (
-                                                <Text style={styles.appointmentNote}>
-                                                    Ghi chú: {appointment.note}
-                                                </Text>
-                                            )}
-                                        </View>
-                                        <Icon name="school" size={20} color="#6200ee" />
-                                    </View>
-                                ))}
-                            </Card.Content>
-                        </Card>
-                    )}
-                </List.Section>
+                </List.Section> */}
 
-                <View style={styles.logoutButtonContainer}>
+                {/* <View style={styles.logoutButtonContainer}>
                     <Button 
                         onPress={logout} 
                         mode="outlined" 
@@ -237,7 +154,7 @@ const Profile = () => {
                     >
                         Đăng xuất
                     </Button>
-                </View>
+                </View> */}
 
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>© 2025 - Phiên bản 1.0.0</Text>
@@ -388,60 +305,6 @@ const styles = StyleSheet.create({
     footerText: {
         color: '#777',
     },
-    appointmentCard: {
-        margin: 16,
-        elevation: 2,
-    },
-    appointmentTitle: {
-        fontSize: 16,
-        marginBottom: 12,
-        color: '#6200ee',
-    },
-    appointmentItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    appointmentContent: {
-        flex: 1,
-    },
-    appointmentDate: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    appointmentTime: {
-        fontSize: 13,
-        color: '#FF9800',
-        marginTop: 2,
-        fontWeight: '500',
-    },
-    appointmentUser: {
-        fontSize: 13,
-        color: '#2196F3',
-        marginTop: 2,
-    },
-    appointmentTeacher: {
-        fontSize: 13,
-        color: '#777',
-        marginTop: 2,
-    },
-    appointmentNote: {
-        fontSize: 12,
-        color: '#4CAF50',
-        marginTop: 2,
-        fontStyle: 'italic',
-    },
-    moreAppointments: {
-        fontSize: 13,
-        color: '#6200ee',
-        fontStyle: 'italic',
-        textAlign: 'center',
-        marginTop: 8,
-    },
 });
 
-export default Profile;
+export default Profile4;

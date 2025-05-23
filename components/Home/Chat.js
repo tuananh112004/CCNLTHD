@@ -76,7 +76,7 @@ const GroupChatScreen = ({ route, navigation }) => {
     if (newMessage.trim() === '') return;
   
     try {
-      const messagesRef = collection(db, 'groups', groupId, 'messages');
+      const messagesRef = collection(db, 'groups',String(groupId), 'messages');
       await addDoc(messagesRef, {
         text: newMessage,
         userId: currentUser.uid,
